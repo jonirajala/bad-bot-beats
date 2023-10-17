@@ -2,7 +2,6 @@ from pypokerengine.api.game import setup_config, start_poker
 from agents.random_agent import RandomPlayer
 from agents.ai_agent import AIPlayer
 
-
 ITERS = 1000
 
 
@@ -28,5 +27,5 @@ def simulate():
         
     print(winner)
 
-if __name__ == "main":
+if __name__ == "__main__":
     simulate()
