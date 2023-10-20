@@ -2,7 +2,7 @@ from pypokerengine.api.emulator import Emulator, RoundManager,MessageBuilder, Co
 
 
 class MyEmulator(Emulator):
-    def run_until_my_next_action(self, game_state, my_uuid, my_messages):
+    def run_until_my_next_action(self, game_state, my_uuid, my_messages, policy_net, device):
         try:
             _ = self.mailbox
         except:
@@ -27,11 +27,15 @@ class MyEmulator(Emulator):
 #                 print(msg["valid_actions"])
                 return game_state, msg["valid_actions"], msg["hole_card"], msg["round_state"]
             
-            action, amount = next_player_algorithm.declare_action(msg["valid_actions"], msg["hole_card"], msg["round_state"])
+
+            if next_player_uuid == "ppo_opponent":
+                action, amount = next_player_algorithm.declare_action(msg["valid_actions"], msg["hole_card"], msg["round_state"], policy_net, device)
+            else:
+                action, amount = next_player_algorithm.declare_action(msg["valid_actions"], msg["hole_card"], msg["round_state"])
             
             game_state, messages = RoundManager.apply_action(game_state, action, amount)
             self.mailbox += messages
-            
+
         events = [self.create_event(message[1]["message"]) for message in self.mailbox]
         events = [e for e in events if e]
         self.mailbox = []
@@ -39,13 +43,13 @@ class MyEmulator(Emulator):
         round_state = DataEncoder.encode_round_state(game_state)
         seats = round_state['seats']
         end_stack = [s['stack'] for s in seats if s['uuid'] == my_uuid][0]
-#         print('finish, reward', end_stack - self.start_stack, end_stack)
+        # print('finish, reward', self.start_stack, end_stack)
 
         if self._is_last_round(game_state, self.game_rule):
 #             print('last_round')
             events += self._generate_game_result_event(game_state)
             
-        return game_state, end_stack - self.start_stack
+        return game_state, end_stack
     
     def apply_my_action(self, game_state, action, bet_amount=0):
         updated_state, messages = RoundManager.apply_action(game_state, action, bet_amount)

@@ -1,38 +1,47 @@
 from pypokerengine.players import BasePokerPlayer
 from pypokerengine.utils.card_utils import gen_cards, estimate_hole_card_win_rate
+import numpy as np
 
 NB_SIMULATION = 1000
+BLUFF_RATIO = [0.3,0.7]
 
 class ProbabilityPlayer(BasePokerPlayer):  # Do not forget to make parent class as "BasePokerPlayer"
     #  we define the logic to make an action through this method. (so this method would be the core of your AI)
     def declare_action(self, valid_actions, hole_card, round_state):
         community_card = round_state['community_card']
         
-        win_rate = estimate_hole_card_win_rate(
-                nb_simulation=NB_SIMULATION,
-                nb_player=2,
-                hole_card=gen_cards(hole_card),
-                community_card=gen_cards(community_card)
-                )
-        
-        exp_value = win_rate * (round_state['pot']['main']['amount']+valid_actions[1]['amount'])-valid_actions[1]['amount']
-        # print(round_state['pot']['main']['amount'], win_rate, exp_value)
+        bluff = np.random.choice(len(BLUFF_RATIO), p=BLUFF_RATIO)
 
-        if exp_value >= 0:
-            # some how implement bettting also
-            if win_rate >= 1/2:
-                action = valid_actions[2]  # fetch CALL action info
-                amount = int((action['amount']['min'] + action['amount']['max']) / 4)
-                action = action['action']
-            else:    
-                action = valid_actions[1]  # fetch CALL action info
+        if bluff:
+            action = valid_actions[2]  # fetch CALL action info
+            amount = int((action['amount']['min'] + action['amount']['max']) / 4)
+            action = action['action']
+        else:
+            win_rate = estimate_hole_card_win_rate(
+                    nb_simulation=NB_SIMULATION,
+                    nb_player=2,
+                    hole_card=gen_cards(hole_card),
+                    community_card=gen_cards(community_card)
+                    )
+            
+            exp_value = win_rate * (round_state['pot']['main']['amount']+valid_actions[1]['amount'])-valid_actions[1]['amount']
+            # print(round_state['pot']['main']['amount'], win_rate, exp_value)
+
+            if exp_value >= 0:
+                # some how implement bettting also
+                if win_rate >= 1/2:
+                    action = valid_actions[2]  # fetch CALL action info
+                    amount = int((action['amount']['min'] + action['amount']['max']) / 4)
+                    action = action['action']
+                else:    
+                    action = valid_actions[1]  # fetch CALL action info
+                    amount = action['amount']
+                    action = action['action']
+                    
+            else:
+                action = valid_actions[0]  # fetch CALL action info
                 amount = action['amount']
                 action = action['action']
-                
-        else:
-            action = valid_actions[0]  # fetch CALL action info
-            amount = action['amount']
-            action = action['action']
 
         return action, amount
 

@@ -49,7 +49,7 @@ def get_action_by_num(action, valid_actions):
     return action, amount
 
 
-def state_to_tensor(round_state, hole_card):
+def state_to_tensor(round_state, hole_card, device):
     community_card = np.zeros(5)
     community_card[:len(round_state['community_card'])] = [card.to_id() for card in gen_cards(round_state['community_card'])]
     hole_card = np.array([card.to_id() for card in gen_cards(hole_card)])
@@ -61,5 +61,5 @@ def state_to_tensor(round_state, hole_card):
     street_array = np.array([street])
     big_blind_pos_array = np.array([big_blind_pos])
 
-    state = torch.tensor(np.concatenate((community_card, hole_card, pot_array, street_array, big_blind_pos_array)))
+    state = torch.tensor(np.concatenate((community_card, hole_card, pot_array, street_array, big_blind_pos_array)), device=device, dtype=torch.float32)
     return state
